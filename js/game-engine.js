@@ -9,10 +9,31 @@ var config = {
 var GAME = (function(config){
     //config
     config                         = (config !== undefined) ? config : {};
-    var _CONST_VERSION              = (config.version !== undefined) ? config.version : 'UNKNOWN';
-    var _CONST_FPS                  = (config.fps !== undefined) ? config.fps : (1000 / 60);
-    var _CONST_TICK_LENGTH          = (config.tick_length !== undefined) ? config.tick_length : 50;
-    var _CONST_TICK_BACKLOG_PANIC   = (config.tick_backlog_panic !== undefined) ? config.tick_backlog_panic : 50;
+    var _CONST_VERSION              = (config.version !== undefined) ? config.version : 'UNKNOWN',
+        _CONST_FPS                  = (config.fps !== undefined) ? config.fps : (1000 / 60),
+        _CONST_TICK_LENGTH          = (config.tick_length !== undefined) ? config.tick_length : 50,
+        _CONST_TICK_BACKLOG_PANIC   = (config.tick_backlog_panic !== undefined) ? config.tick_backlog_panic : 50,
+        _CONST_MOVEMENT_SPEED       = 10;
+    var _KEYS = {
+        BACKSPACE   : 8,
+        TAB         : 9,
+        RETURN      : 13, 
+        ESC         : 27,
+        SPACE       : 32,
+        PAGEUP      : 33,
+        PAGEDOWN    : 34,
+        END         : 35,
+        HOME        : 36,
+        LEFT        : 37,
+        UP          : 38, 
+        RIGHT       : 39,
+        DOWN        : 40,
+        INSERT      : 45,
+        DELETE      : 46,
+        TILDE       : 192,
+        ZERO        : 48, ONE: 49, TWO: 50, THREE: 51, FOUR: 52, FIVE: 53, SIX: 54, SEVEN: 55, EIGHT: 56, NINE: 57, 
+        A           : 65, B: 66, C: 67, D: 68, E: 69, F: 70, G: 71, H: 72, I: 73, J: 74, K: 75, L: 76, M: 77, N: 78, O: 79, P: 80, Q: 81, R: 82, S: 83, T: 84, U: 85, V: 86, W: 87, X: 88, Y: 89, Z: 90
+    };
 
     //runstate
     this.run            = false;
@@ -22,16 +43,26 @@ var GAME = (function(config){
     this.tickBacklog    = false;
 
     //external
-    this.startMain      = _startMain;
-    this.stopMain       = _stopMain;
+    this.startMain              = _startMain;
+    this.stopMain               = _stopMain;
+    this.registerInputHandlers  = _registerInputHandlers;
 
     //screen elements
-    var elements = {
+    var _input = {
+
+        rotatingFase    : false,
+        up              : false,
+        down            : false,
+        right           : false,
+        left            : false
+
     };
 
-    var state = {
+    var _state = {
         box: {
             rotation    : 0,
+            x           : 0,
+            y           : 0,
             element     : document.getElementById('box')
         }
     };
@@ -52,7 +83,7 @@ var GAME = (function(config){
                 return;
             }
 
-            queueGamestate(this.tickBacklog);
+            _queueGamestate(this.tickBacklog);
             // console.log("update took:", callTime - this.nextTick);
 
 
@@ -67,29 +98,51 @@ var GAME = (function(config){
         }
     }
 
-    function queueGamestate(tickBacklog){
+    function _queueGamestate(tickBacklog){
 
         console.log(tickBacklog);
         for(var i = 0; i < tickBacklog; i++){//iterate for the requested number of ticks
 
-            updateGamestate();
+            _updateGamestate();
 
         }
 
-        renderGamestate();
+        _renderGamestate();
     }
 
     //main game state update routine
-    function updateGamestate(){
+    function _updateGamestate(){
 
-            state.box.rotation = state.box.rotation < 360 ? state.box.rotation + 5 : 0;
+            var rotationRate = _input.rotatingFast ? 15: 5;
+            _state.box.rotation = _state.box.rotation < 360 ? _state.box.rotation + rotationRate : 0;
+
+            if(_input.up){
+                _state.box.y -= _CONST_MOVEMENT_SPEED;
+            }
+
+            if(_input.down){
+                _state.box.y += _CONST_MOVEMENT_SPEED;
+            }
+
+            if(_input.right){
+                _state.box.x += _CONST_MOVEMENT_SPEED;
+            }
+
+            if(_input.left){
+                _state.box.x -= _CONST_MOVEMENT_SPEED;
+            }
+
 
     }
 
     //render gamestate onto screen
-    function renderGamestate(){
+    function _renderGamestate(){
 
-            state.box.element.style.transform = "rotate(" + state.box.rotation + "deg)";
+            _state.box.element.style.transform = 
+                'translate(' + _state.box.x + 'px, ' + _state.box.y + 'px) ' + 
+                'rotate(' + _state.box.rotation + 'deg)';
+            console.log(_state.box);
+            console.log(_state.box.element.style.transform);
 
     }
 
@@ -121,8 +174,39 @@ var GAME = (function(config){
         _startMain();
     }
 
+    function _registerInputHandlers(){
 
+        document.addEventListener('keydown', function (event){ return _onKey(event, event.keyCode, true); }, false);
+        document.addEventListener('keyup', function (event){ return _onKey(event, event.keyCode, false); }, false);
 
+    }
+
+    function _onKey(event, keycode, keydown){
+
+        switch(keycode){
+            case _KEYS.SPACE: 
+                _input.rotatingFast = keydown;
+                event.preventDefault();
+                break;
+            case _KEYS.UP: 
+                _input.up = keydown;
+                event.preventDefault();
+                break;
+            case _KEYS.DOWN: 
+                _input.down = keydown;
+                event.preventDefault();
+                break;
+            case _KEYS.RIGHT: 
+                _input.right = keydown;
+                event.preventDefault();
+                break;
+            case _KEYS.LEFT: 
+                _input.left = keydown;
+                event.preventDefault();
+                break;
+        }
+
+    }
 
     return this;
 
@@ -131,6 +215,8 @@ var GAME = (function(config){
 
 (function(GAME){
     console.log(GAME.CONST_VERSION);
+
+    GAME.registerInputHandlers();
 
     document.getElementById('start').addEventListener('click',function(){
         GAME.startMain();
