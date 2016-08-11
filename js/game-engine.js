@@ -3,7 +3,9 @@ var config = {
     'version'               : 0.1,
     'fps'                   : 60,
     'tick_length'           : 1000 / 60,
-    'tick_backlog_panic'    : 250 //number of frames behind before we reset
+    'tick_backlog_panic'    : 250, //number of frames behind before we reset
+    'movement_sensitivity'  : 1,
+    'gravity'               : 0.1
 };
 
 var GAME = (function(config){
@@ -13,7 +15,9 @@ var GAME = (function(config){
         _CONST_FPS                  = (config.fps !== undefined) ? config.fps : (1000 / 60),
         _CONST_TICK_LENGTH          = (config.tick_length !== undefined) ? config.tick_length : 50,
         _CONST_TICK_BACKLOG_PANIC   = (config.tick_backlog_panic !== undefined) ? config.tick_backlog_panic : 50,
-        _CONST_MOVEMENT_SPEED       = 1;
+        _CONST_MOVEMENT_SENSITIVITY = (config.movement_sensitivity !== undefined) ? config.movement_sensitivity : 1,
+        _CONST_GRAVITY              = (config.gravity !== undefined) ? config.gravity : 1
+    ;
     var _KEYS = {
         BACKSPACE   : 8,
         TAB         : 9,
@@ -60,14 +64,23 @@ var GAME = (function(config){
     };
 
     var _state = {
-        box: {
-            rotation    : 0,
-            x           : 0,
-            y           : 0,
-            vx          : 0,
-            vy          : 0,
-            element     : document.getElementById('box')
-        }
+        objects: [
+            {
+                name        : 'box',
+                id          : 'box',
+                rotation    : 0,
+                x           : 0,
+                y           : 0,
+                vx          : 0,
+                vy          : 0,
+                element     : document.getElementById('box')
+            }
+        ]
+    };
+
+    var _vectorUtility  = {
+        applyVector    : _applyVector,
+        applyGravity   : _applyGravity
     };
 
 
@@ -115,43 +128,81 @@ var GAME = (function(config){
 
     //main game state update routine
     function _updateGamestate(){
+
+        _updateGamestateInput();
+
+        for(i = 0; i < _state.objects.length; i++){
+            obj = _state.objects[i];
+
+            _vectorUtility.applyGravity(obj, _CONST_GRAVITY, 0);
+            _vectorUtility.applyVector(obj);
+
+        }
+
+    }
+
+    //apply user input to gamestate
+    function _updateGamestateInput(){
+
+            var box = _state.objects[0],
+                i, obj;
+
             if(_input.reset){
-                _state.box.x = 0;
-                _state.box.y = 0;
-                _state.box.vx = 0;
-                _state.box.vy = 0;
+                box.x = 0;
+                box.y = 0;
+                box.vx = 0;
+                box.vy = 0;
             }
 
             var rotationRate = _input.rotatingFast ? 15: 5;
-            _state.box.rotation = _state.box.rotation < 360 ? _state.box.rotation + rotationRate : 0;
+            box.rotation = box.rotation < 360 ? box.rotation + rotationRate : 0;
 
             if(_input.up){
-                _state.box.vy -= _CONST_MOVEMENT_SPEED;
+                box.vy -= _CONST_MOVEMENT_SENSITIVITY;
             }
 
             if(_input.down){
-                _state.box.vy += _CONST_MOVEMENT_SPEED;
+                box.vy += _CONST_MOVEMENT_SENSITIVITY;
             }
 
             if(_input.right){
-                _state.box.vx += _CONST_MOVEMENT_SPEED;
+                box.vx += _CONST_MOVEMENT_SENSITIVITY;
             }
 
             if(_input.left){
-                _state.box.vx -= _CONST_MOVEMENT_SPEED;
+                box.vx -= _CONST_MOVEMENT_SENSITIVITY;
             }
 
-            _applyVector(_state.box);
 
     }
 
     //render gamestate onto screen
     function _renderGamestate(){
 
-            _state.box.element.style.transform = 
-                'translate(' + _state.box.x + 'px, ' + _state.box.y + 'px) ' +
-                'rotate(' + _state.box.rotation + 'deg)';
-            console.log(_state.box.element.style.transform);
+        var transform;
+
+
+        for(i = 0; i < _state.objects.length; i++){
+            obj = _state.objects[i];
+
+            if(obj.element !== undefined){
+                transform = '';
+
+                if(obj.x !== undefined && obj.y !== undefined){
+                    transform += 'translate(' + obj.x + 'px, ' + obj.y + 'px) ';
+                }
+
+                if(obj.rotation !== undefined){
+                    transform += 'rotate(' + obj.rotation + 'deg) ';
+                }
+
+                if(transform !== ''){
+                    obj.element.style.transform =  transform;
+                }
+
+                // console.log(obj.element.style.transform);
+            }
+        }
 
     }
 
@@ -221,6 +272,7 @@ var GAME = (function(config){
 
     }
 
+
     function _applyVector(object){
         if(object.x !== undefined && object.vx !== undefined){
             object.x += object.vx;
@@ -232,6 +284,14 @@ var GAME = (function(config){
         console.log(object);
 
         return object;
+    }
+
+    function _applyGravity(object, gravity, rotation){
+        //TODO apply gravity based on rotation
+        if(object.vy !== undefined){
+            object.vy += gravity;
+        }
+
     }
 
     return this;
