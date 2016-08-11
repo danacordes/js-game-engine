@@ -13,7 +13,7 @@ var GAME = (function(config){
         _CONST_FPS                  = (config.fps !== undefined) ? config.fps : (1000 / 60),
         _CONST_TICK_LENGTH          = (config.tick_length !== undefined) ? config.tick_length : 50,
         _CONST_TICK_BACKLOG_PANIC   = (config.tick_backlog_panic !== undefined) ? config.tick_backlog_panic : 50,
-        _CONST_MOVEMENT_SPEED       = 10;
+        _CONST_MOVEMENT_SPEED       = 1;
     var _KEYS = {
         BACKSPACE   : 8,
         TAB         : 9,
@@ -51,6 +51,7 @@ var GAME = (function(config){
     var _input = {
 
         rotatingFase    : false,
+        reset           : false,
         up              : false,
         down            : false,
         right           : false,
@@ -63,6 +64,8 @@ var GAME = (function(config){
             rotation    : 0,
             x           : 0,
             y           : 0,
+            vx          : 0,
+            vy          : 0,
             element     : document.getElementById('box')
         }
     };
@@ -112,26 +115,33 @@ var GAME = (function(config){
 
     //main game state update routine
     function _updateGamestate(){
+            if(_input.reset){
+                _state.box.x = 0;
+                _state.box.y = 0;
+                _state.box.vx = 0;
+                _state.box.vy = 0;
+            }
 
             var rotationRate = _input.rotatingFast ? 15: 5;
             _state.box.rotation = _state.box.rotation < 360 ? _state.box.rotation + rotationRate : 0;
 
             if(_input.up){
-                _state.box.y -= _CONST_MOVEMENT_SPEED;
+                _state.box.vy -= _CONST_MOVEMENT_SPEED;
             }
 
             if(_input.down){
-                _state.box.y += _CONST_MOVEMENT_SPEED;
+                _state.box.vy += _CONST_MOVEMENT_SPEED;
             }
 
             if(_input.right){
-                _state.box.x += _CONST_MOVEMENT_SPEED;
+                _state.box.vx += _CONST_MOVEMENT_SPEED;
             }
 
             if(_input.left){
-                _state.box.x -= _CONST_MOVEMENT_SPEED;
+                _state.box.vx -= _CONST_MOVEMENT_SPEED;
             }
 
+            _applyVector(_state.box);
 
     }
 
@@ -139,9 +149,8 @@ var GAME = (function(config){
     function _renderGamestate(){
 
             _state.box.element.style.transform = 
-                'translate(' + _state.box.x + 'px, ' + _state.box.y + 'px) ' + 
+                'translate(' + _state.box.x + 'px, ' + _state.box.y + 'px) ' +
                 'rotate(' + _state.box.rotation + 'deg)';
-            console.log(_state.box);
             console.log(_state.box.element.style.transform);
 
     }
@@ -204,8 +213,25 @@ var GAME = (function(config){
                 _input.left = keydown;
                 event.preventDefault();
                 break;
+            case _KEYS.ESC: 
+                _input.reset = keydown;
+                event.preventDefault();
+                break;
         }
 
+    }
+
+    function _applyVector(object){
+        if(object.x !== undefined && object.vx !== undefined){
+            object.x += object.vx;
+        }
+
+        if(object.y !== undefined && object.vy !== undefined){
+            object.y += object.vy;
+        }
+        console.log(object);
+
+        return object;
     }
 
     return this;
