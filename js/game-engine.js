@@ -40,18 +40,19 @@ var GAME = (function(config){
     };
 
     //runstate
-    this.run            = false;
-    this.lastTick       = false;
-    this.lastRender     = false;
-    this.nextTick       = false;
-    this.tickBacklog    = false;
+    GAME                = this;
+    GAME.run            = false;
+    GAME.lastTick       = false;
+    GAME.lastRender     = false;
+    GAME.nextTick       = false;
+    GAME.tickBacklog    = false;
 
     //external
-    this.startMain              = _startMain;
-    this.stopMain               = _stopMain;
-    this.registerInputHandlers  = _registerInputHandlers;
+    GAME.startMain              = _startMain;
+    GAME.stopMain               = _stopMain;
+    GAME.init                   = _init;
 
-    //screen elements
+    // screen elements
     var _input = {
 
         rotatingFase    : false,
@@ -73,7 +74,7 @@ var GAME = (function(config){
                 y           : 0,
                 vx          : 0,
                 vy          : 0,
-                element     : document.getElementById('box')
+                // element     : document.getElementById('box')
             }
         ]
     };
@@ -87,29 +88,29 @@ var GAME = (function(config){
     function main(callTime){
 
         //if it's time for gamestate update, determine how many ticks, and then update state
-        if(callTime >= this.nextTick){
-            this.tickBacklog = Math.floor( 
-                ( callTime - this.lastTick ) / _CONST_TICK_LENGTH
+        if(callTime >= GAME.nextTick){
+            GAME.tickBacklog = Math.floor( 
+                ( callTime - GAME.lastTick ) / _CONST_TICK_LENGTH
             );
 
-            // console.log(this.tickBacklog, callTime - this.lastTick, callTime, this.lastTick, this.nextTick, _CONST_TICK_LENGTH);
+            // console.log(GAME.tickBacklog, callTime - GAME.lastTick, callTime, GAME.lastTick, GAME.nextTick, _CONST_TICK_LENGTH);
 
-            if(this.tickBacklog > _CONST_TICK_BACKLOG_PANIC){
+            if(GAME.tickBacklog > _CONST_TICK_BACKLOG_PANIC){
                 _panic();
                 return;
             }
 
-            _queueGamestate(this.tickBacklog);
-            // console.log("update took:", callTime - this.nextTick);
+            _queueGamestate(GAME.tickBacklog);
+            // console.log("update took:", callTime - GAME.nextTick);
 
 
-            this.nextTick = this.nextTick + (_CONST_TICK_LENGTH * this.tickBacklog); 
-            this.lastTick = this.nextTick - _CONST_TICK_LENGTH;
-            // console.log(this.lastTick, this.nextTick);
+            GAME.nextTick = GAME.nextTick + (_CONST_TICK_LENGTH * GAME.tickBacklog); 
+            GAME.lastTick = GAME.nextTick - _CONST_TICK_LENGTH;
+            // console.log(GAME.lastTick, GAME.nextTick);
         }
 
         //if we're running, requeue
-        if(this.run !== false){
+        if(GAME.run !== false){
             _queueMain();
         }
     }
@@ -128,6 +129,7 @@ var GAME = (function(config){
 
     //main game state update routine
     function _updateGamestate(){
+        var obj;
 
         _updateGamestateInput();
 
@@ -207,14 +209,14 @@ var GAME = (function(config){
     }
 
     function _queueMain(){
-        this.run = window.requestAnimationFrame(main);
+        GAME.run = window.requestAnimationFrame(main);
     }
 
     function _startMain(){
         console.log("Starting...");
 
-        this.nextTick = window.performance.now() + _CONST_TICK_LENGTH; // next tick time is right now!
-        this.lastTick = this.nextTick - _CONST_TICK_LENGTH;  //pretend that one happened previously
+        GAME.nextTick = window.performance.now() + _CONST_TICK_LENGTH; // next tick time is right now!
+        GAME.lastTick = GAME.nextTick - _CONST_TICK_LENGTH;  //pretend that one happened previously
 
         _queueMain();
     }
@@ -222,9 +224,9 @@ var GAME = (function(config){
     function _stopMain(){
         console.log("Stopping...");
 
-        if(this.run !== false){
-            this.run = false;
-            window.cancelAnimationFrame(this.run);
+        if(GAME.run !== false){
+            GAME.run = false;
+            window.cancelAnimationFrame(GAME.run);
         }
     }
 
@@ -294,7 +296,25 @@ var GAME = (function(config){
 
     }
 
-    return this;
+    function _init(){
+
+        //if an object has an 'id' property, pull in it's DOM element
+        var obj;
+        for(i = 0; i < _state.objects.length; i++){
+            obj = _state.objects[i];
+            
+            if(obj.id !== undefined){
+
+                obj.element = document.getElementById(obj.id);
+
+            }
+        }
+
+        _registerInputHandlers();
+
+    }
+
+    return GAME;
 
 })(config);
 
@@ -302,7 +322,7 @@ var GAME = (function(config){
 (function(GAME){
     console.log(GAME.CONST_VERSION);
 
-    GAME.registerInputHandlers();
+    GAME.init();
 
     document.getElementById('start').addEventListener('click',function(){
         GAME.startMain();
