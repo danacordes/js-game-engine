@@ -75,6 +75,16 @@ var GAME = (function(config){
                 vx          : 0,
                 vy          : 0,
                 // element     : document.getElementById('box')
+            },
+            {
+                name        : 'triangle',
+                id          : 'triangle',
+                rotation    : 0,
+                x           : 0,
+                y           : 0,
+                vx          : 0,
+                vy          : 0,
+                // element     : document.getElementById('box')
             }
         ]
     };

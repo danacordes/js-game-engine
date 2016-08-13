@@ -13,6 +13,18 @@
             top: 10px  ;
             will-change: transform;
         }
+        .triangle{
+            position: absolute;
+            left: 200px;
+            top: 10px  ;
+            will-change: transform;
+
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 50px solid red;
+        }
     </style>
     <script data-main="js/game-engine.js" src="js/vendor/requirejs_2.2.0/require.js"></script>
 </head>
@@ -22,6 +34,7 @@
 <div id="stop">Stop</div>
 
 <div class="box" id="box"></div>
+<div class="triangle" id="triangle"></div>
 
 <!-- <script src="js/game-engine.js"></script> -->
     
