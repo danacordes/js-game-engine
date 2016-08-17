@@ -4,19 +4,32 @@
     <meta charset="UTF-8">
     <title>Game Engine Test</title>
     <style type="text/css">
+
         .box{
             background-color: blue;
             height: 20px;
             width: 20px;
             position: absolute;
-            left: 100px;
-            top: 10px  ;
+            left: 0;
+            top: 0;
             will-change: transform;
         }
+     
+        .circle{
+            background-color: green;
+            height: 20px;
+            width: 20px;
+            border-radius: 10px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            will-change: transform;
+        }
+
         .triangle{
             position: absolute;
-            left: 200px;
-            top: 10px  ;
+            left: 0;
+            top: 0;
             will-change: transform;
 
             width: 0;
@@ -35,6 +48,7 @@
 
 <div class="box" id="box"></div>
 <div class="triangle" id="triangle"></div>
+<div class="circle" id="circle"></div>
 
 <!-- <script src="js/game-engine.js"></script> -->
     

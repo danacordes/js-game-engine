@@ -70,20 +70,39 @@ var GAME = (function(config){
                 name        : 'box',
                 id          : 'box',
                 rotation    : 0,
-                x           : 0,
-                y           : 0,
+                x           : 95,
+                y           : 60,
                 vx          : 0,
                 vy          : 0,
+                radius      : 10,
+                mass        : 1,
+                gravity     : 0
+                // element     : document.getElementById('box')
+            },
+            {
+                name        : 'circle',
+                id          : 'circle',
+                rotation    : 0,
+                x           : 90,
+                y           : 20,
+                vx          : 1,
+                vy          : 2,
+                radius      : 10,
+                mass        : 1,
+                gravity     : 0
                 // element     : document.getElementById('box')
             },
             {
                 name        : 'triangle',
                 id          : 'triangle',
                 rotation    : 0,
-                x           : 0,
-                y           : 0,
+                x           : 200,
+                y           : 20,
                 vx          : 0,
                 vy          : 0,
+                radius      : 10,
+                mass        : 1,
+                gravity     : 1
                 // element     : document.getElementById('box')
             }
         ]
@@ -146,7 +165,23 @@ var GAME = (function(config){
         for(i = 0; i < _state.objects.length; i++){
             obj = _state.objects[i];
 
-            _vectorUtility.applyGravity(obj, _CONST_GRAVITY, 0);
+            //collision detection
+            _testCollisions(obj, _state.objects);
+
+        }
+
+        for(i = 0; i < _state.objects.length; i++){
+            obj = _state.objects[i];
+
+            //if the object has a gravity, apply gravity to it
+            if(obj.gravity !== undefined && obj.gravity !== 0){
+                _vectorUtility.applyGravity(obj, _CONST_GRAVITY, 0);
+            }
+
+            //apply collision results
+            _handleCollisions(obj);
+
+            //apply current velocity to location
             _vectorUtility.applyVector(obj);
 
         }
@@ -197,7 +232,9 @@ var GAME = (function(config){
         for(i = 0; i < _state.objects.length; i++){
             obj = _state.objects[i];
 
-            if(obj.element !== undefined){
+            if(obj.element !== undefined && obj.element !== null){
+
+                //TODO: abstract out arbitrary strings to constants
                 transform = '';
 
                 if(obj.x !== undefined && obj.y !== undefined){
@@ -216,6 +253,85 @@ var GAME = (function(config){
             }
         }
 
+    }
+
+    function _testCollisions(source, objects){
+        var i, 
+            target,
+            dx,
+            dy,
+            d;
+
+        if(source.radius !== undefined && source.radius > 0){
+            for(i = 0; i < objects.length; i++){
+                target = objects[i];
+
+                //if we're already colliding, or checking against the same object, then skip the check
+                if(
+                    source === target ||
+                    source.colliding.indexOf(target) !== -1
+                    ){
+
+                    if(source !== target){
+                        console.log(source.id, "already colliding with ", target.id);
+                    }
+
+                    continue;
+                }
+
+                dx = source.x - target.x;
+                dy = source.y - target.y;
+                d = Math.sqrt(dx * dx + dy * dy);
+
+                if( d < source.radius + target.radius){
+                    console.log(source.id, 'is colliding with', target.id);
+
+                    source.colliding.push(target);
+                    target.colliding.push(source);
+                }
+            }
+        }
+    }
+
+    function _handleCollisions(source){
+
+        //if we're not colliding with anything, return;
+        if(!source.colliding || source.colliding.length === 0){
+            return;
+        }
+
+        var i,
+            target,
+            newSourceVx,
+            newSourceVy,
+            newTargetVx,
+            newTargetVy;
+
+        while(source.colliding.length){
+            target = source.colliding.pop();
+
+            //in this case, we're handling both collisions here, so remove source from target's collision list
+            target.colliding.splice(target.colliding.indexOf(source),1);
+
+            console.log('handling collision of', source.id, 'with', target.id);
+
+            newSourceVx = _eslasticCollisionCalculation(source.vx, source.mass, target.vx, target.mass);
+            newSourceVy = _eslasticCollisionCalculation(source.vy, source.mass, target.vy, target.mass);
+            newTargetVx = _eslasticCollisionCalculation(target.vx, target.mass, source.vx, source.mass);
+            newTargetVy = _eslasticCollisionCalculation(target.vy, target.mass, source.vy, source.mass);
+
+            source.vx = newSourceVx;
+            source.vy = newSourceVy;
+            target.vx = newTargetVx;
+            target.vy = newTargetVy;
+
+        }
+
+    }
+
+    function _eslasticCollisionCalculation(sourceVelocity, sourceMass, targetVelocity, targetMass){
+        // http://gamedevelopment.tutsplus.com/tutorials/when-worlds-collide-simulating-circle-circle-collisions--gamedev-769
+        return (sourceVelocity * (sourceMass - targetMass) + ( 2 * targetMass * targetVelocity) / (sourceMass + targetMass));
     }
 
     function _queueMain(){
@@ -293,7 +409,7 @@ var GAME = (function(config){
         if(object.y !== undefined && object.vy !== undefined){
             object.y += object.vy;
         }
-        console.log(object);
+        // console.log(object);
 
         return object;
     }
@@ -312,6 +428,8 @@ var GAME = (function(config){
         var obj;
         for(i = 0; i < _state.objects.length; i++){
             obj = _state.objects[i];
+
+            obj.colliding = [];
             
             if(obj.id !== undefined){
 
@@ -321,6 +439,7 @@ var GAME = (function(config){
         }
 
         _registerInputHandlers();
+        _renderGamestate();
 
     }
 
